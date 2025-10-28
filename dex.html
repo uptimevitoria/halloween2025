@@ -9,7 +9,7 @@
     .stage { position: absolute; width: 100%; height: 100%; display: flex; 
              flex-direction: column; justify-content: center; align-items: center; 
              opacity: 0; transition: opacity 1.5s; pointer-events: none; }
-    .stage.active { opacity: 1; pointer-events: auto; }
+    .stage.active { opacity: 1; pointer-events: auto; display: flex; }
     iframe { width: 90%; max-width: 1200px; height: 70%; border: 3px solid #0f0; border-radius: 15px; }
     h1, h2 { text-shadow: 0 0 15px #0f0; }
     #start-btn { 
@@ -30,18 +30,18 @@
 </head>
 <body>
 
-  <!-- TAP TO START -->
+  <!-- TAP TO START (Fallback) -->
   <button id="start-btn" onclick="startBGM()">TAP TO ACTIVATE PORTAL</button>
 
   <!-- RESET BUTTON -->
-  <button id="reset-btn" onclick="resetAll()">RESET PORTAL</button>
+  <button id="reset-btn" onclick="resetEverything()">RESET</button>
 
-  <!-- IDLE: BGM (HIDDEN VISUALLY) -->
+  <!-- IDLE: BGM -->
   <div id="idle" class="stage active">
     <iframe id="bgm-iframe"
       src="https://www.youtube.com/embed/SR8vq3sAFKU?autoplay=1&loop=1&playlist=SR8vq3sAFKU&controls=0&modestbranding=1&rel=0&enablejsapi=1&mute=0"
       allow="autoplay" 
-      style="position:absolute; width:0; height:0; border:none; pointer-events:none; opacity:0;">
+      style="position:absolute; width:100%; height:100%; border:none; pointer-events:none; z-index:1;">
     </iframe>
     <div style="z-index:2; font-size:3rem;">
       SYSTEM LOCKED<br>
@@ -49,20 +49,10 @@
     </div>
   </div>
 
-  <!-- VIDEOS: FULLY VISIBLE -->
-  <div id="video1" class="stage">
-    <h2>CLUE 1 UNLOCKED</h2>
-    <iframe id="vid1" src="https://www.youtube.com/embed/xZ1m7bt4SbA?autoplay=1&enablejsapi=1" allow="autoplay"></iframe>
-  </div>
-  <div id="video2" class="stage">
-    <h2>CLUE 2 UNLOCKED</h2>
-    <iframe id="vid2" src="https://www.youtube.com/embed/YreXIc0Osyo?autoplay=1&enablejsapi=1" allow="autoplay"></iframe>
-  </div>
-  <div id="video3" class="stage">
-    <h2>CLUE 3 UNLOCKED</h2>
-    <iframe id="vid3" src="https://www.youtube.com/embed/ObWbiC3-OLk?autoplay=1&enablejsapi=1" allow="autoplay"></iframe>
-    <h1>FINAL FRAGMENT</h1>
-  </div>
+  <!-- VIDEOS -->
+  <div id="video1" class="stage"><h2>CLUE 1 UNLOCKED</h2><iframe id="vid1" src="https://www.youtube.com/embed/xZ1m7bt4SbA?autoplay=1&enablejsapi=1&playsinline=1" allow="autoplay"></iframe></div>
+  <div id="video2" class="stage"><h2>CLUE 2 UNLOCKED</h2><iframe id="vid2" src="https://www.youtube.com/embed/YreXIc0Osyo?autoplay=1&enablejsapi=1&playsinline=1" allow="autoplay"></iframe></div>
+  <div id="video3" class="stage"><h2>CLUE 3 UNLOCKED</h2><iframe id="vid3" src="https://www.youtube.com/embed/ObWbiC3-OLk?autoplay=1&enablejsapi=1&playsinline=1" allow="autoplay"></iframe><h1>FINAL FRAGMENT</h1></div>
 
   <script>
     let ytPlayers = {};
@@ -104,18 +94,21 @@
       stage.style.opacity = '0';
       setTimeout(() => {
         stage.classList.remove('active');
+        stage.style.display = 'none';
         resumeBGM();
       }, 1500);
     }
 
     function resumeBGM() {
-      document.getElementById('idle').classList.add('active');
+      const idle = document.getElementById('idle');
+      idle.style.display = 'flex';
+      idle.classList.add('active');
       if (bgmStarted && ytPlayers.bgm) ytPlayers.bgm.playVideo();
     }
 
-    // === FULL RESET FUNCTION ===
-    function resetAll() {
-      // Stop and rewind all videos
+    // === RESET FUNCTION ===
+    function resetEverything() {
+      // Stop all videos + rewind
       ['vid1', 'vid2', 'vid3'].forEach(id => {
         if (ytPlayers[id]) {
           ytPlayers[id].stopVideo();
@@ -126,15 +119,18 @@
       // Hide all video stages
       ['video1', 'video2', 'video3'].forEach(id => {
         const stage = document.getElementById(id);
-        stage.classList.remove('active');
-        stage.style.opacity = '0';
+        if (stage) {
+          stage.classList.remove('active');
+          stage.style.opacity = '0';
+          stage.style.display = 'none';
+        }
       });
 
-      // Return to idle + restart BGM
-      document.getElementById('idle').classList.add('active');
-      if (bgmStarted && ytPlayers.bgm) {
-        ytPlayers.bgm.playVideo();
-      }
+      // Clear unlock (for refresh)
+      localStorage.removeItem('portal-clue');
+
+      // Return to idle + resume BGM
+      resumeBGM();
 
       // Flash button
       const btn = document.getElementById('reset-btn');
@@ -146,10 +142,14 @@
 
     function unlockVideo(clueType) {
       const videoId = clueToVideo[clueType];
-      document.getElementById('idle').classList.remove('active');
+      const idle = document.getElementById('idle');
+      idle.classList.remove('active');
+      idle.style.display = 'none';
       if (bgmStarted && ytPlayers.bgm) ytPlayers.bgm.pauseVideo();
       setTimeout(() => {
-        document.getElementById(videoId).classList.add('active');
+        const stage = document.getElementById(videoId);
+        stage.style.display = 'flex';
+        stage.classList.add('active');
       }, 300);
     }
 
