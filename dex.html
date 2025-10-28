@@ -6,64 +6,18 @@
   <title>Portal Timeline</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      font-family: 'Courier New', monospace; 
-      background: #000; 
-      color: #0f0; 
-      overflow: hidden; 
-      position: relative; 
-      height: 100vh;
-    }
-
-    #bgm-controls { 
-      position: absolute; top: 20px; left: 20px; z-index: 300; 
-    }
-    #bgm-controls button { 
-      padding: 10px 15px; font-size: 1rem; margin-right: 10px; 
-      background: #0f0; color: #000; border: none; border-radius: 8px; cursor: pointer; 
-      font-weight: bold;
-    }
-
-    #play-video { 
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-      z-index: 250; display: none; 
-      padding: 30px 70px; font-size: 2.5rem; 
-      background: #6a5acd; color: white; border: none; 
-      border-radius: 30px; cursor: pointer; 
-      box-shadow: 0 0 50px #6a5acd, 0 0 20px #000; 
-      font-weight: bold; text-shadow: 0 0 15px #000;
-      transition: all 0.3s;
-    }
+    body { font-family: 'Courier New', monospace; background: #000; color: #0f0; overflow: hidden; position: relative; height: 100vh; }
+    #bgm-controls { position: absolute; top: 20px; left: 20px; z-index: 300; }
+    #bgm-controls button { padding: 10px 15px; font-size: 1rem; margin-right: 10px; background: #0f0; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    #play-video { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 250; display: none; padding: 30px 70px; font-size: 2.5rem; background: #6a5acd; color: white; border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 0 50px #6a5acd, 0 0 20px #000; font-weight: bold; text-shadow: 0 0 15px #000; transition: all 0.3s; }
     #play-video:hover { transform: translate(-50%, -50%) scale(1.1); }
-
-    #video-container { 
-      position: absolute; inset: 0; 
-      display: flex; justify-content: center; align-items: center; 
-      opacity: 0; transition: opacity 1.5s ease; 
-      pointer-events: none; z-index: 100;
-    }
+    #video-container { position: absolute; inset: 0; display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 1.5s ease; pointer-events: none; z-index: 100; }
     #video-container.active { opacity: 1; pointer-events: auto; }
-
-    #video-container iframe { 
-      width: 92vw; height: 72vh; 
-      max-width: 1300px; max-height: 850px;
-      border: 5px solid #0f0; border-radius: 25px; 
-      box-shadow: 0 0 40px #0f0, 0 0 80px rgba(0, 255, 0, 0.3);
-    }
-
-    #disembed, #reset { 
-      position: absolute; top: 20px; font-size: 1.1rem; 
-      padding: 14px 22px; border: none; border-radius: 12px; 
-      cursor: pointer; z-index: 300;
-    }
+    #video-container iframe { width: 92vw; height: 72vh; max-width: 1300px; max-height: 850px; border: 5px solid #0f0; border-radius: 25px; box-shadow: 0 0 40px #0f0, 0 0 80px rgba(0, 255, 0, 0.3); }
+    #disembed, #reset { position: absolute; top: 20px; font-size: 1.1rem; padding: 14px 22px; border: none; border-radius: 12px; cursor: pointer; z-index: 300; }
     #disembed { right: 170px; background: #e67e22; color: white; display: none; }
     #reset { right: 20px; background: #c0392b; color: white; }
-
-    #status { 
-      position: absolute; bottom: 20px; left: 20px; 
-      font-size: 1.4rem; color: #0f0; font-weight: bold; 
-      z-index: 200;
-    }
+    #status { position: absolute; bottom: 20px; left: 20px; font-size: 1.4rem; color: #0f0; font-weight: bold; z-index: 200; }
   </style>
 </head>
 <body>
@@ -76,18 +30,13 @@
   <button id="play-video" onclick="embedVideo()">PLAY VIDEO</button>
 
   <div id="video-container">
-    <iframe id="vimeo-player" 
-            src="" 
-            frameborder="0" 
-            allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" 
-            allowfullscreen>
-    </iframe>
+    <iframe id="vimeo-player" src="" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" allowfullscreen></iframe>
   </div>
 
   <button id="disembed" onclick="disembedVideo()">DIS-EMBED</button>
   <button id="reset" onclick="resetAll()">RESET ALL</button>
 
-  <div id="status">Status: Waiting for clue...</div>
+  <div id="status">Status: Connecting...</div>
 
   <audio id="bgm" loop></audio>
 
@@ -104,7 +53,6 @@
     ];
     let currentBGM = 0;
     let pendingClue = null;
-    let lastTimestamp = null;
 
     const videoUrls = {
       num: 'https://player.vimeo.com/video/1131397582?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1',
@@ -112,14 +60,21 @@
       date: 'https://player.vimeo.com/video/1131411707?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1'
     };
 
-    const clueTitles = {
-      num: 'MAGIC NUMBER',
-      colors: 'MAGIC COLORS',
-      date: 'MAGIC DATE'
-    };
+    const clueTitles = { num: 'MAGIC NUMBER', colors: 'MAGIC COLORS', date: 'MAGIC DATE' };
 
-    // BROADCAST CHANNEL FOR PHONE → PC
-    const bc = new BroadcastChannel('portal-channel');
+    // WEBSOCKET SERVER
+    const ws = new WebSocket('wss://sync.x.ai/portal');
+
+    ws.onopen = () => { status.textContent = 'Status: Ready'; };
+    ws.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      if (data.type === 'CLUE') {
+        pendingClue = data.clue;
+        status.textContent = `CLUE RECEIVED: ${clueTitles[pendingClue]}`;
+        playBtn.style.display = 'block';
+        playBtn.textContent = `PLAY: ${clueTitles[pendingClue]}`;
+      }
+    };
 
     function startBGM() {
       bgm.src = bgmFiles[currentBGM];
@@ -127,35 +82,7 @@
       status.textContent = `BGM ${currentBGM + 1} playing`;
     }
 
-    function stopBGM() {
-      bgm.pause();
-      status.textContent = 'BGM stopped';
-    }
-
-    function checkForClue() {
-      const clue = localStorage.getItem('portal-clue');
-      const ts = localStorage.getItem('portal-timestamp');
-      if (clue && ts && ts !== lastTimestamp) {
-        triggerClue(clue, ts);
-      }
-    }
-
-    function triggerClue(clue, ts) {
-      pendingClue = clue;
-      lastTimestamp = ts;
-      status.textContent = `CLUE RECEIVED: ${clueTitles[clue]}`;
-      playBtn.style.display = 'block';
-      playBtn.textContent = `PLAY: ${clueTitles[clue]}`;
-    }
-
-    // LISTEN TO BROADCAST FROM PHONE
-    bc.onmessage = (e) => {
-      if (e.data.type === 'CLUE') {
-        localStorage.setItem('portal-clue', e.data.clue);
-        localStorage.setItem('portal-timestamp', Date.now().toString());
-        triggerClue(e.data.clue, Date.now().toString());
-      }
-    };
+    function stopBGM() { bgm.pause(); }
 
     function embedVideo() {
       if (!pendingClue) return;
@@ -174,7 +101,6 @@
       currentBGM = (currentBGM + 1) % bgmFiles.length;
       startBGM();
       pendingClue = null;
-      lastTimestamp = null;
       status.textContent = 'Ready for next clue.';
     }
 
@@ -184,22 +110,15 @@
       videoContainer.classList.remove('active');
       document.getElementById('disembed').style.display = 'none';
       playBtn.style.display = 'none';
-      localStorage.clear();
       pendingClue = null;
-      lastTimestamp = null;
       currentBGM = 0;
       status.textContent = 'Reset complete.';
     }
 
-    // POLL + STORAGE + BROADCAST
-    window.addEventListener('storage', checkForClue);
-    setInterval(checkForClue, 300);
-    setTimeout(checkForClue, 100);
-
     document.body.addEventListener('click', function init() {
       if (!bgm.src) startBGM();
       document.body.removeEventListener('click', init);
-    });
+    }, { once: true });
   </script>
 </body>
 </html>
