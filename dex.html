@@ -18,30 +18,30 @@
       border: none; border-radius: 15px; cursor: pointer; z-index: 100; 
       animation: pulse 2s infinite; display: none;
     }
-    #stop-btn {
+    #reset-btn {
       position: absolute; top: 20px; right: 20px; z-index: 200;
       padding: 12px 20px; font-size: 1rem; background: #c0392b; color: white;
       border: none; border-radius: 10px; cursor: pointer; font-weight: bold;
       box-shadow: 0 0 15px #f00;
     }
-    #stop-btn:hover { background: #e74c3c; }
+    #reset-btn:hover { background: #e74c3c; }
     @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.1); } }
   </style>
 </head>
 <body>
 
-  <!-- TAP TO START (Fallback) -->
+  <!-- TAP TO START -->
   <button id="start-btn" onclick="startBGM()">TAP TO ACTIVATE PORTAL</button>
 
-  <!-- STOP EVERYTHING BUTTON -->
-  <button id="stop-btn" onclick="stopEverything()">STOP EVERYTHING</button>
+  <!-- RESET BUTTON -->
+  <button id="reset-btn" onclick="resetAll()">RESET PORTAL</button>
 
-  <!-- IDLE: BGM -->
+  <!-- IDLE: BGM (HIDDEN VISUALLY) -->
   <div id="idle" class="stage active">
     <iframe id="bgm-iframe"
       src="https://www.youtube.com/embed/SR8vq3sAFKU?autoplay=1&loop=1&playlist=SR8vq3sAFKU&controls=0&modestbranding=1&rel=0&enablejsapi=1&mute=0"
       allow="autoplay" 
-      style="position:absolute; width:100%; height:100%; border:none; pointer-events:none; z-index:1;">
+      style="position:absolute; width:0; height:0; border:none; pointer-events:none; opacity:0;">
     </iframe>
     <div style="z-index:2; font-size:3rem;">
       SYSTEM LOCKED<br>
@@ -49,10 +49,20 @@
     </div>
   </div>
 
-  <!-- VIDEOS -->
-  <div id="video1" class="stage"><h2>CLUE 1 UNLOCKED</h2><iframe id="vid1" src="https://www.youtube.com/embed/xZ1m7bt4SbA?autoplay=1&enablejsapi=1" allow="autoplay"></iframe></div>
-  <div id="video2" class="stage"><h2>CLUE 2 UNLOCKED</h2><iframe id="vid2" src="https://www.youtube.com/embed/YreXIc0Osyo?autoplay=1&enablejsapi=1" allow="autoplay"></iframe></div>
-  <div id="video3" class="stage"><h2>CLUE 3 UNLOCKED</h2><iframe id="vid3" src="https://www.youtube.com/embed/ObWbiC3-OLk?autoplay=1&enablejsapi=1" allow="autoplay"></iframe><h1>FINAL FRAGMENT</h1></div>
+  <!-- VIDEOS: FULLY VISIBLE -->
+  <div id="video1" class="stage">
+    <h2>CLUE 1 UNLOCKED</h2>
+    <iframe id="vid1" src="https://www.youtube.com/embed/xZ1m7bt4SbA?autoplay=1&enablejsapi=1" allow="autoplay"></iframe>
+  </div>
+  <div id="video2" class="stage">
+    <h2>CLUE 2 UNLOCKED</h2>
+    <iframe id="vid2" src="https://www.youtube.com/embed/YreXIc0Osyo?autoplay=1&enablejsapi=1" allow="autoplay"></iframe>
+  </div>
+  <div id="video3" class="stage">
+    <h2>CLUE 3 UNLOCKED</h2>
+    <iframe id="vid3" src="https://www.youtube.com/embed/ObWbiC3-OLk?autoplay=1&enablejsapi=1" allow="autoplay"></iframe>
+    <h1>FINAL FRAGMENT</h1>
+  </div>
 
   <script>
     let ytPlayers = {};
@@ -103,9 +113,9 @@
       if (bgmStarted && ytPlayers.bgm) ytPlayers.bgm.playVideo();
     }
 
-    // === STOP EVERYTHING FUNCTION ===
-    function stopEverything() {
-      // Stop all videos
+    // === FULL RESET FUNCTION ===
+    function resetAll() {
+      // Stop and rewind all videos
       ['vid1', 'vid2', 'vid3'].forEach(id => {
         if (ytPlayers[id]) {
           ytPlayers[id].stopVideo();
@@ -116,20 +126,18 @@
       // Hide all video stages
       ['video1', 'video2', 'video3'].forEach(id => {
         const stage = document.getElementById(id);
-        if (stage) {
-          stage.classList.remove('active');
-          stage.style.opacity = '0';
-        }
+        stage.classList.remove('active');
+        stage.style.opacity = '0';
       });
 
-      // Return to idle + resume BGM
+      // Return to idle + restart BGM
       document.getElementById('idle').classList.add('active');
       if (bgmStarted && ytPlayers.bgm) {
         ytPlayers.bgm.playVideo();
       }
 
-      // Optional: Flash button
-      const btn = document.getElementById('stop-btn');
+      // Flash button
+      const btn = document.getElementById('reset-btn');
       btn.style.background = '#e74c3c';
       setTimeout(() => btn.style.background = '#c0392b', 300);
     }
