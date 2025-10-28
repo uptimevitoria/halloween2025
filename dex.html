@@ -15,7 +15,6 @@
       height: 100vh;
     }
 
-    /* BGM CONTROLS */
     #bgm-controls { 
       position: absolute; top: 20px; left: 20px; z-index: 300; 
     }
@@ -25,7 +24,6 @@
       font-weight: bold;
     }
 
-    /* PLAY VIDEO BUTTON - DEAD CENTER */
     #play-video { 
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
       z-index: 250; display: none; 
@@ -38,7 +36,6 @@
     }
     #play-video:hover { transform: translate(-50%, -50%) scale(1.1); }
 
-    /* VIDEO CONTAINER - FULL CENTER */
     #video-container { 
       position: absolute; inset: 0; 
       display: flex; justify-content: center; align-items: center; 
@@ -54,7 +51,6 @@
       box-shadow: 0 0 40px #0f0, 0 0 80px rgba(0, 255, 0, 0.3);
     }
 
-    /* DIS-EMBED & RESET */
     #disembed, #reset { 
       position: absolute; top: 20px; font-size: 1.1rem; 
       padding: 14px 22px; border: none; border-radius: 12px; 
@@ -63,7 +59,6 @@
     #disembed { right: 170px; background: #e67e22; color: white; display: none; }
     #reset { right: 20px; background: #c0392b; color: white; }
 
-    /* STATUS */
     #status { 
       position: absolute; bottom: 20px; left: 20px; 
       font-size: 1.4rem; color: #0f0; font-weight: bold; 
@@ -73,16 +68,13 @@
 </head>
 <body>
 
-  <!-- BGM CONTROLS -->
   <div id="bgm-controls">
     <button onclick="startBGM()">PLAY BGM</button>
     <button onclick="stopBGM()">STOP BGM</button>
   </div>
 
-  <!-- PLAY VIDEO BUTTON -->
   <button id="play-video" onclick="embedVideo()">PLAY VIDEO</button>
 
-  <!-- VIDEO CONTAINER -->
   <div id="video-container">
     <iframe id="vimeo-player" 
             src="" 
@@ -92,7 +84,6 @@
     </iframe>
   </div>
 
-  <!-- DIS-EMBED & RESET -->
   <button id="disembed" onclick="disembedVideo()">DIS-EMBED</button>
   <button id="reset" onclick="resetAll()">RESET ALL</button>
 
@@ -115,11 +106,10 @@
     let pendingClue = null;
     let lastTimestamp = null;
 
-    // UPDATED VIDEO URLS — MAGIC DATE IS NEW
     const videoUrls = {
       num: 'https://player.vimeo.com/video/1131397582?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1',
       colors: 'https://player.vimeo.com/video/1131398566?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1',
-      date: 'https://player.vimeo.com/video/1131411707?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1'  // NEW LINK
+      date: 'https://player.vimeo.com/video/1131411707?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1'
     };
 
     const clueTitles = {
@@ -127,6 +117,9 @@
       colors: 'MAGIC COLORS',
       date: 'MAGIC DATE'
     };
+
+    // BROADCAST CHANNEL FOR PHONE → PC
+    const bc = new BroadcastChannel('portal-channel');
 
     function startBGM() {
       bgm.src = bgmFiles[currentBGM];
@@ -143,27 +136,35 @@
       const clue = localStorage.getItem('portal-clue');
       const ts = localStorage.getItem('portal-timestamp');
       if (clue && ts && ts !== lastTimestamp) {
-        pendingClue = clue;
-        lastTimestamp = ts;
-        status.textContent = `CLUE RECEIVED: ${clueTitles[clue]}`;
-        playBtn.style.display = 'block';
-        playBtn.textContent = `PLAY: ${clueTitles[clue]}`;
+        triggerClue(clue, ts);
       }
     }
+
+    function triggerClue(clue, ts) {
+      pendingClue = clue;
+      lastTimestamp = ts;
+      status.textContent = `CLUE RECEIVED: ${clueTitles[clue]}`;
+      playBtn.style.display = 'block';
+      playBtn.textContent = `PLAY: ${clueTitles[clue]}`;
+    }
+
+    // LISTEN TO BROADCAST FROM PHONE
+    bc.onmessage = (e) => {
+      if (e.data.type === 'CLUE') {
+        localStorage.setItem('portal-clue', e.data.clue);
+        localStorage.setItem('portal-timestamp', Date.now().toString());
+        triggerClue(e.data.clue, Date.now().toString());
+      }
+    };
 
     function embedVideo() {
       if (!pendingClue) return;
       stopBGM();
-      
-      const url = videoUrls[pendingClue];
-      iframe.src = ''; // Reset
-      setTimeout(() => {
-        iframe.src = url;
-        videoContainer.classList.add('active');
-        document.getElementById('disembed').style.display = 'block';
-        playBtn.style.display = 'none';
-        status.textContent = `${clueTitles[pendingClue]} playing...`;
-      }, 100);
+      iframe.src = videoUrls[pendingClue];
+      videoContainer.classList.add('active');
+      document.getElementById('disembed').style.display = 'block';
+      playBtn.style.display = 'none';
+      status.textContent = `${clueTitles[pendingClue]} playing...`;
     }
 
     function disembedVideo() {
@@ -190,8 +191,9 @@
       status.textContent = 'Reset complete.';
     }
 
+    // POLL + STORAGE + BROADCAST
     window.addEventListener('storage', checkForClue);
-    setInterval(checkForClue, 200);
+    setInterval(checkForClue, 300);
     setTimeout(checkForClue, 100);
 
     document.body.addEventListener('click', function init() {
