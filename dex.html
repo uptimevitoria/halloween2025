@@ -30,7 +30,7 @@
   <!-- INSTRUCTIONS -->
   <div id="instructions">
     <strong>STEPS:</strong><br>
-    1. Open <code>PHONE.html</code> in another tab<br>
+    1. Open <code>phone.html</code> in another tab<br>
     2. Enter clue → Submit<br>
     3. <strong>COME BACK HERE</strong><br>
     4. Click <strong>PLAY VIDEO</strong>
@@ -106,14 +106,11 @@
       if (!pendingClue) return;
       stopBGM();
       const url = videoUrls[pendingClue];
-      iframe.src = ''; // Clear
-      setTimeout(() => {
-        iframe.src = url + '&autoplay=1'; // Force load
-        videoContainer.classList.add('active');
-        document.getElementById('disembed').style.display = 'block';
-        playBtn.style.display = 'none';
-        status.textContent = `${clueTitles[pendingClue]} playing...`;
-      }, 100);
+      iframe.src = url + '&autoplay=1';
+      videoContainer.classList.add('active');
+      document.getElementById('disembed').style.display = 'block';
+      playBtn.style.display = 'none';
+      status.textContent = `${clueTitles[pendingClue]} playing...`;
     }
 
     function disembedVideo() {
@@ -133,20 +130,17 @@
       videoContainer.classList.remove('active');
       document.getElementById('disembed').style.display = 'none';
       playBtn.style.display = 'none';
-      localStorage.removeItem('portal-clue');
-      localStorage.removeItem('portal-timestamp');
+      localStorage.clear();
       pendingClue = null;
       lastTimestamp = null;
       currentBGM = 0;
       status.textContent = 'Reset complete.';
     }
 
-    // LISTEN FOR STORAGE + POLL
     window.addEventListener('storage', checkForClue);
     setInterval(checkForClue, 200);
     setTimeout(checkForClue, 100);
 
-    // First click
     document.body.addEventListener('click', function init() {
       if (!bgm.src) startBGM();
       document.body.removeEventListener('click', init);
