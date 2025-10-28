@@ -8,28 +8,37 @@
     body { font-family: 'Courier New', monospace; background: #000; color: #0f0; margin: 0; overflow: hidden; position: relative; }
     #bgm-controls { position: absolute; top: 20px; left: 20px; z-index: 100; }
     #bgm-controls button { padding: 10px 15px; font-size: 1rem; margin-right: 10px; background: #0f0; color: #000; border: none; border-radius: 8px; cursor: pointer; }
-    #play-video { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 99; display: none; padding: 20px 40px; font-size: 1.8rem; background: #6a5acd; color: white; border: none; border-radius: 15px; cursor: pointer; }
+    #play-video { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 99; display: none; padding: 20px 40px; font-size: 1.8rem; background: #6a5acd; color: white; border: none; border-radius: 15px; cursor: pointer; box-shadow: 0 0 20px #6a5acd; }
     #video-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 1s; pointer-events: none; }
     #video-container.active { opacity: 1; pointer-events: auto; }
     #video-container iframe { width: 90%; max-width: 1200px; height: 70%; border: 3px solid #0f0; border-radius: 15px; }
     #disembed, #reset { position: absolute; top: 20px; right: 20px; font-size: 1rem; padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; }
     #disembed { right: 140px; background: #e67e22; color: white; display: none; }
     #reset { background: #c0392b; color: white; }
-    #status { position: absolute; bottom: 20px; left: 20px; font-size: 1rem; color: #0f0; }
+    #status { position: absolute; bottom: 20px; left: 20px; font-size: 1.2rem; color: #0f0; font-weight: bold; }
+    #instructions { position: absolute; top: 80px; left: 20px; right: 20px; color: #0f0; font-size: 1rem; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 8px; display: none; }
   </style>
 </head>
 <body>
 
-  <!-- BGM CONTROLS (TOP LEFT) -->
+  <!-- BGM CONTROLS -->
   <div id="bgm-controls">
     <button onclick="startBGM()">PLAY BGM</button>
     <button onclick="stopBGM()">STOP BGM</button>
   </div>
 
-  <!-- PLAY VIDEO BUTTON (CENTER) -->
+  <!-- INSTRUCTIONS -->
+  <div id="instructions">
+    <strong>INSTRUCTIONS:</strong><br>
+    1. Open <code>PHONE.html</code> in another tab<br>
+    2. Enter a clue → Submit<br>
+    3. Come back here → Click <strong>PLAY VIDEO</strong>
+  </div>
+
+  <!-- PLAY VIDEO BUTTON -->
   <button id="play-video" onclick="embedVideo()">PLAY VIDEO</button>
 
-  <!-- VIDEO CONTAINER (CENTER) -->
+  <!-- VIDEO CONTAINER -->
   <div id="video-container">
     <iframe id="vimeo-player" src="" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" allowfullscreen></iframe>
   </div>
@@ -38,7 +47,7 @@
   <button id="disembed" onclick="disembedVideo()">DIS-EMBED</button>
   <button id="reset" onclick="resetAll()">RESET ALL</button>
 
-  <div id="status">Status: Idle</div>
+  <div id="status">Status: Waiting for clue...</div>
 
   <audio id="bgm" loop></audio>
 
@@ -48,6 +57,7 @@
     const playBtn = document.getElementById('play-video');
     const videoContainer = document.getElementById('video-container');
     const iframe = document.getElementById('vimeo-player');
+    const instructions = document.getElementById('instructions');
     const bgmFiles = [
       'YES - Dark Ruins - BGM.mp3',
       'YES - Enchanted Shadows - Dark BGM.mp3',
@@ -56,7 +66,6 @@
     let currentBGM = 0;
     let pendingClue = null;
 
-    // VIMEO VIDEO URLs (YOUR UPLOADS)
     const videoUrls = {
       num: 'https://player.vimeo.com/video/1131397582?badge=0&autopause=0&player_id=0&app_id=58479',
       colors: 'https://player.vimeo.com/video/1131398566?badge=0&autopause=0&player_id=0&app_id=58479',
@@ -82,11 +91,13 @@
 
     function checkForClue() {
       const clue = localStorage.getItem('portal-clue');
+      const ts = localStorage.getItem('portal-timestamp');
       if (clue && clue !== pendingClue) {
         pendingClue = clue;
         status.textContent = `CLUE RECEIVED: ${clueTitles[clue]}`;
         playBtn.style.display = 'block';
         playBtn.textContent = `PLAY: ${clueTitles[clue]}`;
+        instructions.style.display = 'block';
       }
     }
 
@@ -97,6 +108,7 @@
       videoContainer.classList.add('active');
       document.getElementById('disembed').style.display = 'block';
       playBtn.style.display = 'none';
+      instructions.style.display = 'none';
       status.textContent = `${clueTitles[pendingClue]} playing...`;
     }
 
@@ -107,7 +119,8 @@
       currentBGM = (currentBGM + 1) % bgmFiles.length;
       startBGM();
       pendingClue = null;
-      status.textContent = 'Video removed. Ready for next clue.';
+      instructions.style.display = 'block';
+      status.textContent = 'Ready for next clue.';
     }
 
     function resetAll() {
@@ -120,14 +133,15 @@
       localStorage.removeItem('portal-timestamp');
       pendingClue = null;
       currentBGM = 0;
+      instructions.style.display = 'block';
       status.textContent = 'Reset complete.';
     }
 
-    // Poll for clue every 1s
-    setInterval(checkForClue, 1000);
-    setTimeout(checkForClue, 500);
+    // CHECK EVERY 200ms
+    setInterval(checkForClue, 200);
+    setTimeout(checkForClue, 100);
 
-    // First interaction
+    // First click
     document.body.addEventListener('click', function init() {
       if (!bgm.src) startBGM();
       document.body.removeEventListener('click', init);
