@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Portal Timeline</title>
+  <title>PORTAL DEX - ALL IN ONE</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Courier New', monospace; background: #000; color: #0f0; overflow: hidden; position: relative; height: 100vh; }
@@ -18,50 +18,93 @@
     #disembed { right: 170px; background: #e67e22; color: white; display: none; }
     #reset { right: 20px; background: #c0392b; color: white; }
     #status { position: absolute; bottom: 20px; left: 20px; font-size: 1.4rem; color: #0f0; font-weight: bold; z-index: 200; }
-  </style>
 
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    /* CLUE INPUTS - HIDDEN UNTIL NEEDED */
+    #clue-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10,0,31,0.95); padding: 30px; border-radius: 20px; border: 3px solid #6a5acd; color: #e0f8ff; z-index: 400; display: none; max-width: 90%; width: 500px; box-shadow: 0 0 40px #6a5acd; }
+    #clue-panel h2 { text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px #6a5acd; }
+    .input-group { margin: 15px 0; }
+    select, input, button { font-size: 1.2em; padding: 12px; margin: 6px; border-radius: 10px; border: none; width: 100%; }
+    select { background: #2a1b4d; color: white; }
+    input { background: #1e1e2e; color: #0f0; text-align: center; }
+    button { background: #6a5acd; color: white; cursor: pointer; font-weight: bold; }
+    button:hover { background: #8a2be2; }
+    #clue-status { margin-top: 15px; font-size: 1.3em; color: #0f0; text-align: center; }
+    .color-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0; }
+    .color-btn { padding: 16px; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; font-size: 0.9em; }
+    #show-clues { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: #6a5acd; color: white; padding: 12px 24px; font-size: 1.1rem; border: none; border-radius: 12px; cursor: pointer; z-index: 300; }
+  </style>
 </head>
 <body>
 
+  <!-- BGM CONTROLS -->
   <div id="bgm-controls">
     <button onclick="startBGM()">PLAY BGM</button>
     <button onclick="stopBGM()">STOP BGM</button>
   </div>
 
-  <button id="play-video" onclick="embedVideo()">PLAY VIDEO</button>
+  <!-- SHOW CLUES BUTTON -->
+  <button id="show-clues" onclick="toggleClues()">ENTER CLUE</button>
 
+  <!-- VIDEO PLAYER -->
+  <button id="play-video" onclick="embedVideo()">PLAY VIDEO</button>
   <div id="video-container">
     <iframe id="vimeo-player" src="" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" allowfullscreen></iframe>
   </div>
 
+  <!-- DIS-EMBED & RESET -->
   <button id="disembed" onclick="disembedVideo()">DIS-EMBED</button>
   <button id="reset" onclick="resetAll()">RESET ALL</button>
 
-  <div id="status">Status: Connecting...</div>
+  <!-- STATUS -->
+  <div id="status">Status: Ready</div>
+
+  <!-- CLUE PANEL -->
+  <div id="clue-panel">
+    <h2>ENTER MAGIC CLUE</h2>
+
+    <!-- CLUE 1 -->
+    <div class="input-group">
+      <label>MAGIC NUMBER (4 digits):</label>
+      <input type="text" id="num" maxlength="4" placeholder="????">
+      <button onclick="tryClue('num')">SUBMIT</button>
+    </div>
+
+    <!-- CLUE 2 -->
+    <div class="input-group">
+      <label>MAGIC COLORS (click 4 in order):</label>
+      <div id="color-grid" class="color-grid"></div>
+      <input type="text" id="colors" readonly placeholder="Click 4 colors">
+      <button onclick="tryClue('colors')">SUBMIT</button>
+      <button style="background:#c0392b; font-size:0.9em; padding:8px;" onclick="resetColors()">RESET</button>
+    </div>
+
+    <!-- CLUE 3 -->
+    <div class="input-group">
+      <label>MAGIC DATE:</label>
+      <select id="month">
+        <option>Ennuary</option><option>Jannuary</option><option>February</option><option>MArch</option>
+        <option>April</option><option>May</option><option>June</option><option>July</option>
+        <option>August</option><option>September</option><option>October</option><option>November</option>
+        <option>December</option><option>Hexember</option><option>Zerini</option>
+      </select>
+      <input type="number" id="day" min="1" max="31" placeholder="Day">
+      <input type="number" id="year" min="0" max="9999" placeholder="Year">
+      <button onclick="tryClue('date')">SUBMIT</button>
+    </div>
+
+    <div id="clue-status"></div>
+    <button style="margin-top:20px; background:#c0392b;" onclick="toggleClues()">CLOSE</button>
+  </div>
 
   <audio id="bgm" loop></audio>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCYBN6ffuq_9KhhDep5ZbEAvzV2uPhxpkQ",
-      authDomain: "halloween2025-sync.firebaseapp.com",
-      projectId: "halloween2025-sync",
-      storageBucket: "halloween2025-sync.firebasestorage.app",
-      messagingSenderId: "93312253295",
-      appId: "1:93312253295:web:389a98efa6c30c0e227c9a",
-      databaseURL: "https://halloween2025-sync-default-rtdb.firebaseio.com"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
     const bgm = document.getElementById('bgm');
     const status = document.getElementById('status');
     const playBtn = document.getElementById('play-video');
     const videoContainer = document.getElementById('video-container');
     const iframe = document.getElementById('vimeo-player');
+    const cluePanel = document.getElementById('clue-panel');
     const bgmFiles = [
       'YES - Dark Ruins - BGM.mp3',
       'YES - Enchanted Shadows - Dark BGM.mp3',
@@ -69,7 +112,6 @@
     ];
     let currentBGM = 0;
     let pendingClue = null;
-    let lastTime = 0;
 
     const videoUrls = {
       num: 'https://player.vimeo.com/video/1131397582?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1',
@@ -79,6 +121,67 @@
 
     const clueTitles = { num: 'MAGIC NUMBER', colors: 'MAGIC COLORS', date: 'MAGIC DATE' };
 
+    // CLUES
+    let selectedColors = [];
+    const CLUES = {
+      num: '5210',
+      colors: ['BLUE','ORANGE','PURPLE','GREEN'],
+      date: { m: 'Ennuary', d: 31, y: 1540 }
+    };
+
+    const colorData = [
+      { name: 'BLUE',   color: '#3498db' }, { name: 'ORANGE', color: '#e67e22' },
+      { name: 'PURPLE', color: '#9b59b6' }, { name: 'GREEN',  color: '#27ae60' },
+      { name: 'YELLOW', color: '#f1c40f' }, { name: 'RED',    color: '#e74c3c' },
+      { name: 'BROWN',  color: '#8b4513' }, { name: 'BLACK',  color: '#2c3e50' },
+      { name: 'WHITE',  color: '#ecf0f1' }
+    ];
+
+    function shuffle(a) { for (let i = a.length-1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+    function renderColorGrid() {
+      const grid = document.getElementById('color-grid'); grid.innerHTML = '';
+      shuffle([...colorData]).forEach(item => {
+        const btn = document.createElement('button');
+        btn.className = 'color-btn'; btn.style.backgroundColor = item.color;
+        btn.textContent = item.name; btn.onclick = () => addColor(item.name);
+        grid.appendChild(btn);
+      });
+    }
+    function addColor(c) { if (selectedColors.length >= 4) return; selectedColors.push(c); document.getElementById('colors').value = selectedColors.join(', '); }
+    function resetColors() { selectedColors = []; document.getElementById('colors').value = ''; }
+
+    function tryClue(type) {
+      const status = document.getElementById('clue-status');
+      let correct = false;
+      let clueKey = null;
+
+      if (type === 'num' && document.getElementById('num').value.trim() === CLUES.num) { correct = true; clueKey = 'num'; }
+      if (type === 'colors' && selectedColors.length === 4 && selectedColors.join(',') === CLUES.colors.join(',')) { correct = true; clueKey = 'colors'; resetColors(); }
+      if (type === 'date') {
+        const m = document.getElementById('month').value;
+        const d = parseInt(document.getElementById('day').value);
+        const y = parseInt(document.getElementById('year').value);
+        if (m === CLUES.date.m && d === CLUES.date.d && y === CLUES.date.y) { correct = true; clueKey = 'date'; }
+      }
+
+      if (correct) {
+        pendingClue = clueKey;
+        status.innerHTML = `CLUE ACCEPTED: ${clueKey.toUpperCase()}`;
+        playBtn.style.display = 'block';
+        playBtn.textContent = `PLAY: ${clueTitles[clueKey]}`;
+        toggleClues(); // Close panel
+      } else {
+        status.textContent = 'Invalid clue.';
+      }
+      setTimeout(() => status.textContent = '', 4000);
+    }
+
+    function toggleClues() {
+      const isOpen = cluePanel.style.display === 'block';
+      cluePanel.style.display = isOpen ? 'none' : 'block';
+      if (!isOpen) renderColorGrid();
+    }
+
     function startBGM() {
       bgm.src = bgmFiles[currentBGM];
       bgm.play().catch(() => {});
@@ -86,19 +189,6 @@
     }
 
     function stopBGM() { bgm.pause(); }
-
-    db.ref('clue').on('value', (snapshot) => {
-      const data = snapshot.val();
-      if (data && data.time > lastTime) {
-        pendingClue = data.clue;
-        lastTime = data.time;
-        status.textContent = `CLUE RECEIVED: ${clueTitles[pendingClue]}`;
-        playBtn.style.display = 'block';
-        playBtn.textContent = `PLAY: ${clueTitles[pendingClue]}`;
-      }
-    }, (error) => {
-      status.textContent = 'Sync error. Check internet.';
-    });
 
     function embedVideo() {
       if (!pendingClue) return;
@@ -126,23 +216,17 @@
       videoContainer.classList.remove('active');
       document.getElementById('disembed').style.display = 'none';
       playBtn.style.display = 'none';
-      db.ref('clue').set(null);
       pendingClue = null;
-      lastTime = 0;
       currentBGM = 0;
       status.textContent = 'Reset complete.';
+      cluePanel.style.display = 'none';
     }
 
+    // Auto-play BGM on first click
     document.body.addEventListener('click', function init() {
       if (!bgm.src) startBGM();
       document.body.removeEventListener('click', init);
     }, { once: true });
-
-    db.ref('.info/connected').on('value', (snap) => {
-      if (snap.val() === true) {
-        status.textContent = 'Status: Ready';
-      }
-    });
   </script>
 </body>
 </html>
