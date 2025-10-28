@@ -25,14 +25,6 @@
       font-weight: bold;
     }
 
-    /* INSTRUCTIONS */
-    #instructions { 
-      position: absolute; top: 80px; left: 20px; right: 20px; 
-      color: #0f0; font-size: 1rem; background: rgba(0,0,0,0.8); 
-      padding: 15px; border-radius: 10px; border: 1px solid #0f0; 
-      z-index: 200;
-    }
-
     /* PLAY VIDEO BUTTON - DEAD CENTER */
     #play-video { 
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
@@ -87,15 +79,6 @@
     <button onclick="stopBGM()">STOP BGM</button>
   </div>
 
-  <!-- INSTRUCTIONS -->
-  <div id="instructions">
-    <strong>STEPS:</strong><br>
-    1. Open <code>phone.html</code> in another tab<br>
-    2. Enter clue → Submit<br>
-    3. <strong>COME BACK HERE</strong><br>
-    4. Click <strong>PLAY VIDEO</strong> (center)
-  </div>
-
   <!-- PLAY VIDEO BUTTON -->
   <button id="play-video" onclick="embedVideo()">PLAY VIDEO</button>
 
@@ -132,10 +115,11 @@
     let pendingClue = null;
     let lastTimestamp = null;
 
+    // UPDATED VIDEO URLS — MAGIC DATE IS NEW
     const videoUrls = {
       num: 'https://player.vimeo.com/video/1131397582?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1',
       colors: 'https://player.vimeo.com/video/1131398566?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1',
-      date: 'https://player.vimeo.com/video/1131395575?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1'
+      date: 'https://player.vimeo.com/video/1131411707?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1'  // NEW LINK
     };
 
     const clueTitles = {
@@ -171,7 +155,6 @@
       if (!pendingClue) return;
       stopBGM();
       
-      // FORCE VIMEO TO LOAD + AUTOPLAY
       const url = videoUrls[pendingClue];
       iframe.src = ''; // Reset
       setTimeout(() => {
