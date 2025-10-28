@@ -11,8 +11,11 @@
     iframe { width: 90%; max-width: 1200px; height: 70%; border: 3px solid #0f0; border-radius: 15px; }
     button { margin: 10px; padding: 15px 30px; font-size: 1.5rem; background: #0f0; color: #000; border: none; border-radius: 15px; cursor: pointer; }
     button:hover { background: #0f8; }
-    #reset, #disembed { position: absolute; top: 20px; right: 20px; background: #c0392b; color: white; font-size: 1rem; padding: 12px 20px; }
-    #disembed { right: 150px; }
+    #reset, #disembed, #reload { position: absolute; top: 20px; font-size: 1rem; padding: 10px 15px; }
+    #reset { right: 20px; background: #c0392b; color: white; }
+    #disembed { right: 140px; background: #e67e22; color: white; display: none; }
+    #reload { right: 280px; background: #9b59b6; color: white; }
+    #debug { position: absolute; bottom: 20px; left: 20px; font-size: 0.9rem; color: #0f0; }
     h1, h2 { text-shadow: 0 0 15px #0f0; margin: 10px; }
   </style>
 </head>
@@ -24,18 +27,21 @@
     <p>Awaiting magic clue...</p>
     <audio id="bgm" loop></audio>
     <button onclick="startBGM()">START BGM</button>
+    <button id="reload" onclick="location.reload()">RELOAD FOR CLUE</button>
   </div>
 
-  <!-- VIDEO SCREENS (iframe added dynamically) -->
+  <!-- VIDEO SCREENS -->
   <div id="video1" class="screen"><h2>CLUE 1 UNLOCKED</h2><div id="player1"></div></div>
   <div id="video2" class="screen"><h2>CLUE 2 UNLOCKED</h2><div id="player2"></div></div>
   <div id="video3" class="screen"><h2>CLUE 3 UNLOCKED</h2><div id="player3"></div><h1>FINAL FRAGMENT</h1></div>
 
   <button id="reset" onclick="resetAll()">RESET ALL</button>
   <button id="disembed" onclick="disembedVideo()" style="display:none;">DIS-EMBED</button>
+  <div id="debug">Status: Waiting...</div>
 
   <script>
     const bgm = document.getElementById('bgm');
+    const debug = document.getElementById('debug');
     const bgmFiles = [
       'YES - Dark Ruins - BGM.mp3',
       'YES - Enchanted Shadows - Dark BGM.mp3',
@@ -53,13 +59,15 @@
     function startBGM() {
       bgm.src = bgmFiles[currentBGM];
       bgm.play().catch(() => {});
+      debug.textContent = 'BGM playing';
     }
 
     function showVideo(clue) {
+      debug.textContent = `CLUE RECEIVED: ${clue.toUpperCase()}`;
       bgm.pause();
       const vid = videos[clue];
       const container = document.getElementById(vid.id);
-      container.innerHTML = `<iframe src="${vid.url}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+      container.innerHTML = `<iframe src="${vid.url}&t=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
       showScreen('video' + (clue === 'num' ? '1' : clue === 'colors' ? '2' : '3'));
       document.getElementById('disembed').style.display = 'block';
       currentVideo = clue;
@@ -74,18 +82,20 @@
       startBGM();
       showScreen('idle');
       currentVideo = null;
+      debug.textContent = 'Video dis-embedded. Ready for next clue.';
     }
 
     function resetAll() {
       bgm.pause();
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       ['player1','player2','player3'].forEach(id => document.getElementById(id).innerHTML = '');
       document.getElementById('disembed').style.display = 'none';
       localStorage.removeItem('portal-clue');
+      localStorage.removeItem('portal-timestamp');
       showScreen('idle');
       currentBGM = 0;
       startBGM();
       currentVideo = null;
+      debug.textContent = 'Reset complete.';
     }
 
     function showScreen(id) {
@@ -93,19 +103,20 @@
       document.getElementById(id).classList.add('active');
     }
 
-    // Listen for clue from phone
+    // Listen for clue
     window.addEventListener('storage', e => {
       if (e.key === 'portal-clue' && e.newValue) {
         showVideo(e.newValue);
       }
     });
 
+    // Check on load
     setTimeout(() => {
       const clue = localStorage.getItem('portal-clue');
       if (clue) showVideo(clue);
     }, 500);
 
-    // Auto-start BGM on first interaction
+    // First click starts BGM
     document.body.addEventListener('click', function init() {
       if (!bgm.src) startBGM();
       document.body.removeEventListener('click', init);
