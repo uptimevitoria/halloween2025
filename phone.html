@@ -87,6 +87,13 @@
     function addColor(c) { if (selectedColors.length >= 4) return; selectedColors.push(c); document.getElementById('colors').value = selectedColors.join(', '); }
     function resetColors() { selectedColors = []; document.getElementById('colors').value = ''; }
 
+    // WEBSOCKET SERVER
+    const ws = new WebSocket('wss://sync.x.ai/portal');
+
+    ws.onopen = () => {
+      console.log('Connected to sync server');
+    };
+
     function tryClue(type) {
       const status = document.getElementById('status');
       let correct = false;
@@ -101,16 +108,12 @@
         if (m === CLUES.date.m && d === CLUES.date.d && y === CLUES.date.y) { correct = true; clueKey = 'date'; }
       }
 
-      if (correct) {
-        // SEND TO localStorage
-        localStorage.setItem('portal-clue', clueKey);
-        localStorage.setItem('portal-timestamp', Date.now().toString());
-
-        // SEND TO BroadcastChannel (PHONE → PC)
-        const bc = new BroadcastChannel('portal-channel');
-        bc.postMessage({ type: 'CLUE', clue: clueKey });
-
+      if (correct && ws.readyState === WebSocket.OPEN) {
+        const msg = { type: 'CLUE', clue: clueKey, time: Date.now() };
+        ws.send(JSON.stringify(msg));
         status.innerHTML = `CLUE SENT: ${clueKey.toUpperCase()}<br>Go to DEX → PLAY`;
+      } else if (correct) {
+        status.textContent = 'Sync server not ready...';
       } else {
         status.textContent = 'Invalid clue.';
       }
