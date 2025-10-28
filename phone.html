@@ -21,23 +21,53 @@
     .color-btn { padding: 16px; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; font-size: 0.9em; }
     .color-btn:active { transform: scale(0.95); }
   </style>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
-    // YOUR FIREBASE CONFIG
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+  <h1>PORTAL</h1>
+  <p>Enter any one of the 3 Magic Clues to unlock a timeline fragment...</p>
+
+  <div class="input-group">
+    <label>MAGIC NUMBER (4 digits):</label>
+    <input type="text" id="num" maxlength="4" placeholder="????">
+    <button onclick="tryClue('num')">SUBMIT</button>
+  </div>
+
+  <div class="input-group">
+    <label>MAGIC COLORS (click 4 in order):</label>
+    <div id="color-grid" class="color-grid"></div>
+    <input type="text" id="colors" readonly placeholder="Click 4 colors">
+    <button onclick="tryClue('colors')">SUBMIT</button>
+    <button style="background:#c0392b; font-size:0.9em; padding:8px;" onclick="resetColors()">RESET</button>
+  </div>
+
+  <div class="input-group">
+    <label>MAGIC DATE:</label>
+    <select id="month">
+      <option>Ennuary</option><option>Jannuary</option><option>February</option><option>MArch</option>
+      <option>April</option><option>May</option><option>June</option><option>July</option>
+      <option>August</option><option>September</option><option>October</option><option>November</option>
+      <option>December</option><option>Hexember</option><option>Zerini</option>
+    </select>
+    <input type="number" id="day" min="1" max="31" placeholder="Day">
+    <input type="number" id="year" min="0" max="9999" placeholder="Year">
+    <button onclick="tryClue('date')">SUBMIT</button>
+  </div>
+
+  <div id="status"></div>
+
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCYBN6ffuq_9KhhDep5ZbEAvzV2uPhxpkQ",
       authDomain: "halloween2025-sync.firebaseapp.com",
       projectId: "halloween2025-sync",
-      storageBucket: "halloween2025-sync.firebasestorage.app",
-      messagingSenderId: "93312253295",
-      appId: "1:93312253295:web:389a98efa6c30c0e227c9a",
       databaseURL: "https://halloween2025-sync-default-rtdb.firebaseio.com"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
     let selectedColors = [];
     const CLUES = {
@@ -82,18 +112,19 @@
       }
 
       if (correct) {
-        set(ref(db, 'clue'), {
+        db.ref('clue').set({
           clue: clueKey,
           time: Date.now()
+        }).then(() => {
+          status.innerHTML = `CLUE SENT: ${clueKey.toUpperCase()}<br>Go to DEX → PLAY`;
         });
-        status.innerHTML = `CLUE SENT: ${clueKey.toUpperCase()}<br>Go to DEX → PLAY`;
       } else {
         status.textContent = 'Invalid clue.';
       }
       setTimeout(() => status.textContent = '', 5000);
     }
 
-    window.onload = () => { renderColorGrid(); selectedColors = []; document.getElementById('colors').value = ''; };
+    window.onload = () => { renderColorGrid(); };
   </script>
 </body>
 </html>
