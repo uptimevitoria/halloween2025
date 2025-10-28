@@ -102,9 +102,15 @@
       }
 
       if (correct) {
+        // SEND TO localStorage
         localStorage.setItem('portal-clue', clueKey);
         localStorage.setItem('portal-timestamp', Date.now().toString());
-        status.innerHTML = `CLUE SENT: ${clueKey.toUpperCase()}<br>Go to DEX.html and click PLAY VIDEO`;
+
+        // SEND TO BroadcastChannel (PHONE → PC)
+        const bc = new BroadcastChannel('portal-channel');
+        bc.postMessage({ type: 'CLUE', clue: clueKey });
+
+        status.innerHTML = `CLUE SENT: ${clueKey.toUpperCase()}<br>Go to DEX → PLAY`;
       } else {
         status.textContent = 'Invalid clue.';
       }
