@@ -17,4 +17,132 @@
     #disembed, #reset { position: absolute; top: 20px; font-size: 1.1rem; padding: 14px 22px; border: none; border-radius: 12px; cursor: pointer; z-index: 300; }
     #disembed { right: 170px; background: #e67e22; color: white; display: none; }
     #reset { right: 20px; background: #c0392b; color: white; }
-    #status { position: absolute; bottom: 20px; left: 20px; font-size: 1.4rem
+    #status { position: absolute; bottom: 20px; left: 20px; font-size: 1.4rem; color: #0f0; font-weight: bold; z-index: 200; }
+  </style>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+  <div id="bgm-controls">
+    <button onclick="startBGM()">PLAY BGM</button>
+    <button onclick="stopBGM()">STOP BGM</button>
+  </div>
+
+  <button id="play-video" onclick="embedVideo()">PLAY VIDEO</button>
+
+  <div id="video-container">
+    <iframe id="vimeo-player" src="" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" allowfullscreen></iframe>
+  </div>
+
+  <button id="disembed" onclick="disembedVideo()">DIS-EMBED</button>
+  <button id="reset" onclick="resetAll()">RESET ALL</button>
+
+  <div id="status">Status: Connecting...</div>
+
+  <audio id="bgm" loop></audio>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCYBN6ffuq_9KhhDep5ZbEAvzV2uPhxpkQ",
+      authDomain: "halloween2025-sync.firebaseapp.com",
+      projectId: "halloween2025-sync",
+      storageBucket: "halloween2025-sync.firebasestorage.app",
+      messagingSenderId: "93312253295",
+      appId: "1:93312253295:web:389a98efa6c30c0e227c9a",
+      databaseURL: "https://halloween2025-sync-default-rtdb.firebaseio.com"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const bgm = document.getElementById('bgm');
+    const status = document.getElementById('status');
+    const playBtn = document.getElementById('play-video');
+    const videoContainer = document.getElementById('video-container');
+    const iframe = document.getElementById('vimeo-player');
+    const bgmFiles = [
+      'YES - Dark Ruins - BGM.mp3',
+      'YES - Enchanted Shadows - Dark BGM.mp3',
+      'YES - Shadow Hallows_ Instrumental Halloween Fantasy.mp3'
+    ];
+    let currentBGM = 0;
+    let pendingClue = null;
+    let lastTime = 0;
+
+    const videoUrls = {
+      num: 'https://player.vimeo.com/video/1131397582?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1',
+      colors: 'https://player.vimeo.com/video/1131398566?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1',
+      date: 'https://player.vimeo.com/video/1131411707?badge=0&autopause=0&player_id=0&app_id=58479&autoplay=1'
+    };
+
+    const clueTitles = { num: 'MAGIC NUMBER', colors: 'MAGIC COLORS', date: 'MAGIC DATE' };
+
+    function startBGM() {
+      bgm.src = bgmFiles[currentBGM];
+      bgm.play().catch(() => {});
+      status.textContent = `BGM ${currentBGM + 1} playing`;
+    }
+
+    function stopBGM() { bgm.pause(); }
+
+    db.ref('clue').on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data && data.time > lastTime) {
+        pendingClue = data.clue;
+        lastTime = data.time;
+        status.textContent = `CLUE RECEIVED: ${clueTitles[pendingClue]}`;
+        playBtn.style.display = 'block';
+        playBtn.textContent = `PLAY: ${clueTitles[pendingClue]}`;
+      }
+    }, (error) => {
+      status.textContent = 'Sync error. Check internet.';
+    });
+
+    function embedVideo() {
+      if (!pendingClue) return;
+      stopBGM();
+      iframe.src = videoUrls[pendingClue];
+      videoContainer.classList.add('active');
+      document.getElementById('disembed').style.display = 'block';
+      playBtn.style.display = 'none';
+      status.textContent = `${clueTitles[pendingClue]} playing...`;
+    }
+
+    function disembedVideo() {
+      iframe.src = '';
+      videoContainer.classList.remove('active');
+      document.getElementById('disembed').style.display = 'none';
+      currentBGM = (currentBGM + 1) % bgmFiles.length;
+      startBGM();
+      pendingClue = null;
+      status.textContent = 'Ready for next clue.';
+    }
+
+    function resetAll() {
+      stopBGM();
+      iframe.src = '';
+      videoContainer.classList.remove('active');
+      document.getElementById('disembed').style.display = 'none';
+      playBtn.style.display = 'none';
+      db.ref('clue').set(null);
+      pendingClue = null;
+      lastTime = 0;
+      currentBGM = 0;
+      status.textContent = 'Reset complete.';
+    }
+
+    document.body.addEventListener('click', function init() {
+      if (!bgm.src) startBGM();
+      document.body.removeEventListener('click', init);
+    }, { once: true });
+
+    db.ref('.info/connected').on('value', (snap) => {
+      if (snap.val() === true) {
+        status.textContent = 'Status: Ready';
+      }
+    });
+  </script>
+</body>
+</html>
