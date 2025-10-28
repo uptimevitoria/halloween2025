@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portal</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #0a001f; color: #e0f8ff; 
+           display: flex; flex-direction: column; align-items: center; justify-content: center; 
+           height: 100vh; margin: 0; text-align: center; padding: 20px; overflow-y: auto; }
+    h1 { font-size: 2.2em; margin: 10px; text-shadow: 0 0 10px #6a5acd; }
+    .input-group { margin: 15px 0; width: 100%; max-width: 420px; }
+    select, input, button { 
+      font-size: 1.2em; padding: 12px; margin: 6px; border-radius: 10px; border: none; width: 100%; }
+    select { background: #2a1b4d; color: white; height: 50px; }
+    input { background: #1e1e2e; color: #0f0; text-align: center; }
+    button { background: #6a5acd; color: white; cursor: pointer; font-weight: bold; }
+    button:hover { background: #8a2be2; }
+    #status { margin-top: 20px; font-size: 1.3em; min-height: 1.5em; color: #0f0; }
+    .color-grid { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr 1fr; 
+      gap: 8px; 
+      margin: 12px 0; 
+    }
+    .color-btn { 
+      padding: 16px; border-radius: 12px; font-weight: bold; color: white; 
+      cursor: pointer; font-size: 0.9em; 
+    }
+    .color-btn:active { transform: scale(0.95); }
+  </style>
+</head>
+<body>
+  <h1>PORTAL</h1>
+  <p>Enter any one of the 3 Magic Clues to unlock a timeline fragment...</p>
+
+  <!-- CLUE 1: MAGIC NUMBER -->
+  <div class="input-group">
+    <label>MAGIC NUMBER (4 digits):</label>
+    <input type="text" id="num" maxlength="4" placeholder="????">
+    <button onclick="tryClue('num')">SUBMIT</button>
+  </div>
+
+  <!-- CLUE 2: MAGIC COLORS — SCRAMBLED -->
+  <div class="input-group">
+    <label>MAGIC COLORS (click 4 in exact order):</label>
+    <div id="color-grid" class="color-grid"></div>
+    <input type="text" id="colors" readonly placeholder="Click 4 colors in order">
+    <button onclick="tryClue('colors')">SUBMIT</button>
+    <button style="background:#c0392b; font-size:0.9em; padding:8px;" onclick="resetColors()">RESET</button>
+  </div>
+
+  <!-- CLUE 3: MAGIC DATE — 15 MONTHS -->
+  <div class="input-group">
+    <label>MAGIC DATE:</label>
+    <select id="month">
+      <option>Ennuary</option>
+      <option>Jannuary</option>
+      <option>February</option>
+      <option>MArch</option>
+      <option>April</option>
+      <option>May</option>
+      <option>June</option>
+      <option>July</option>
+      <option>August</option>
+      <option>September</option>
+      <option>October</option>
+      <option>November</option>
+      <option>December</option>
+      <option>Hexember</option>
+      <option>Zerini</option>
+    </select>
+    <input type="number" id="day" min="1" max="31" placeholder="Day">
+    <input type="number" id="year" min="0" max="9999" placeholder="Year">
+    <button onclick="tryClue('date')">SUBMIT</button>
+  </div>
+
+  <div id="status"></div>
+
+  <script>
+    let selectedColors = [];
+
+    const CLUES = {
+      num: '5210',
+      colors: ['BLUE','ORANGE','PURPLE','GREEN'],
+      date: { m: 'Ennuary', d: 31, y: 1540 }
+    };
+
+    const colorData = [
+      { name: 'BLUE',   color: '#3498db' },
+      { name: 'ORANGE', color: '#e67e22' },
+      { name: 'PURPLE', color: '#9b59b6' },
+      { name: 'GREEN',  color: '#27ae60' },
+      { name: 'YELLOW', color: '#f1c40f' },
+      { name: 'RED',    color: '#e74c3c' },
+      { name: 'BROWN',  color: '#8b4513' },
+      { name: 'BLACK',  color: '#2c3e50' },
+      { name: 'WHITE',  color: '#ecf0f1' }
+    ];
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function renderColorGrid() {
+      const grid = document.getElementById('color-grid');
+      grid.innerHTML = '';
+      const shuffled = shuffle([...colorData]);
+      shuffled.forEach(item => {
+        const btn = document.createElement('button');
+        btn.className = 'color-btn';
+        btn.style.backgroundColor = item.color;
+        btn.textContent = item.name;
+        btn.onclick = () => addColor(item.name);
+        grid.appendChild(btn);
+      });
+    }
+
+    function addColor(color) {
+      if (selectedColors.length >= 4) return;
+      selectedColors.push(color);
+      document.getElementById('colors').value = selectedColors.join(', ');
+    }
+
+    function resetColors() {
+      selectedColors = [];
+      document.getElementById('colors').value = '';
+    }
+
+    function tryClue(type) {
+      const status = document.getElementById('status');
+      let correct = false;
+
+      if (type === 'num') {
+        const val = document.getElementById('num').value.trim();
+        if (val === CLUES.num) { correct = true; localStorage.setItem('portal-clue', 'num'); }
+      }
+
+      if (type === 'colors') {
+        if (selectedColors.length === 4 && selectedColors.join(',') === CLUES.colors.join(',')) {
+          correct = true; localStorage.setItem('portal-clue', 'colors');
+          resetColors();
+        }
+      }
+
+      if (type === 'date') {
+        const m = document.getElementById('month').value;
+        const d = parseInt(document.getElementById('day').value);
+        const y = parseInt(document.getElementById('year').value);
+        if (m === CLUES.date.m && d === CLUES.date.d && y === CLUES.date.y) {
+          correct = true; localStorage.setItem('portal-clue', 'date');
+        }
+      }
+
+      if (correct) {
+        status.innerHTML = 'CLUE ACCEPTED! <br>Fragment unlocked on DEX.html.';
+        setTimeout(() => status.textContent = '', 3000);
+      } else {
+        status.textContent = 'Invalid clue. Try again.';
+        setTimeout(() => status.textContent = '', 2000);
+      }
+    }
+
+    window.onload = () => {
+      renderColorGrid();
+      selectedColors = [];
+      document.getElementById('colors').value = '';
+    };
+  </script>
+</body>
+</html>

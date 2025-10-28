@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portal Timeline</title>
+  <style>
+    body { font-family: 'Courier New', monospace; background: #000; color: #0f0; margin: 0; overflow: hidden; }
+    .stage { position: absolute; width: 100%; height: 100%; display: flex; 
+             flex-direction: column; justify-content: center; align-items: center; 
+             opacity: 0; transition: opacity 1.5s; pointer-events: none; }
+    .stage.active { opacity: 1; pointer-events: auto; }
+    iframe { width: 90%; max-width: 1200px; height: 70%; border: 3px solid #0f0; border-radius: 15px; }
+    h1, h2 { text-shadow: 0 0 15px #0f0; }
+    #start-btn { 
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+      padding: 20px 40px; font-size: 1.5rem; background: #0f0; color: #000; 
+      border: none; border-radius: 15px; cursor: pointer; z-index: 100; 
+      animation: pulse 2s infinite; display: none;
+    }
+    @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.1); } }
+  </style>
+</head>
+<body>
+
+  <!-- TAP TO START (Fallback) -->
+  <button id="start-btn" onclick="startBGM()">TAP TO ACTIVATE PORTAL</button>
+
+  <!-- IDLE: BGM -->
+  <div id="idle" class="stage active">
+    <iframe id="bgm-iframe"
+      src="https://www.youtube.com/embed/SR8vq3sAFKU?autoplay=1&loop=1&playlist=SR8vq3sAFKU&controls=0&modestbranding=1&rel=0&enablejsapi=1&mute=0"
+      allow="autoplay" 
+      style="position:absolute; width:100%; height:100%; border:none; pointer-events:none; z-index:1;">
+    </iframe>
+    <div style="z-index:2; font-size:3rem;">
+      SYSTEM LOCKED<br>
+      <small>Awaiting first clue...</small>
+    </div>
+  </div>
+
+  <!-- VIDEOS -->
+  <div id="video1" class="stage"><h2>CLUE 1 UNLOCKED</h2><iframe id="vid1" src="https://www.youtube.com/embed/xZ1m7bt4SbA?autoplay=1&enablejsapi=1" allow="autoplay"></iframe></div>
+  <div id="video2" class="stage"><h2>CLUE 2 UNLOCKED</h2><iframe id="vid2" src="https://www.youtube.com/embed/YreXIc0Osyo?autoplay=1&enablejsapi=1" allow="autoplay"></iframe></div>
+  <div id="video3" class="stage"><h2>CLUE 3 UNLOCKED</h2><iframe id="vid3" src="https://www.youtube.com/embed/ObWbiC3-OLk?autoplay=1&enablejsapi=1" allow="autoplay"></iframe><h1>FINAL FRAGMENT</h1></div>
+
+  <script>
+    let ytPlayers = {};
+    let bgmStarted = false;
+
+    function onYouTubeIframeAPIReady() {
+      ytPlayers.bgm = new YT.Player('bgm-iframe', { events: { 'onReady': onBGMReady } });
+      ['vid1','vid2','vid3'].forEach(id => {
+        ytPlayers[id] = new YT.Player(id, { events: { 'onStateChange': onPlayerStateChange } });
+      });
+    }
+
+    function onBGMReady() {
+      ytPlayers.bgm.playVideo();
+      setTimeout(checkBGM, 1000);
+    }
+
+    function checkBGM() {
+      if (!bgmStarted && ytPlayers.bgm.getPlayerState() !== 1) {
+        document.getElementById('start-btn').style.display = 'block';
+      }
+    }
+
+    function startBGM() {
+      ytPlayers.bgm.playVideo();
+      document.getElementById('start-btn').style.display = 'none';
+      bgmStarted = true;
+    }
+
+    function onPlayerStateChange(event) {
+      if (event.data === YT.PlayerState.ENDED) {
+        const stageId = event.target.a.id.replace('vid', 'video');
+        fadeOutStage(stageId);
+      }
+    }
+
+    function fadeOutStage(stageId) {
+      const stage = document.getElementById(stageId);
+      stage.style.opacity = '0';
+      setTimeout(() => {
+        stage.classList.remove('active');
+        resumeBGM();
+      }, 1500);
+    }
+
+    function resumeBGM() {
+      document.getElementById('idle').classList.add('active');
+      if (bgmStarted && ytPlayers.bgm) ytPlayers.bgm.playVideo();
+    }
+
+    const clueToVideo = { 'num': 'video1', 'colors': 'video2', 'date': 'video3' };
+
+    function unlockVideo(clueType) {
+      const videoId = clueToVideo[clueType];
+      document.getElementById('idle').classList.remove('active');
+      if (bgmStarted && ytPlayers.bgm) ytPlayers.bgm.pauseVideo();
+      setTimeout(() => {
+        document.getElementById(videoId).classList.add('active');
+      }, 300);
+    }
+
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'portal-clue' && e.newValue) unlockVideo(e.newValue);
+    });
+
+    setTimeout(() => {
+      const clue = localStorage.getItem('portal-clue');
+      if (clue) unlockVideo(clue);
+    }, 500);
+
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, null);
+  </script>
+</body>
+</html>
