@@ -18,6 +18,13 @@
       border: none; border-radius: 15px; cursor: pointer; z-index: 100; 
       animation: pulse 2s infinite; display: none;
     }
+    #stop-btn {
+      position: absolute; top: 20px; right: 20px; z-index: 200;
+      padding: 12px 20px; font-size: 1rem; background: #c0392b; color: white;
+      border: none; border-radius: 10px; cursor: pointer; font-weight: bold;
+      box-shadow: 0 0 15px #f00;
+    }
+    #stop-btn:hover { background: #e74c3c; }
     @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.1); } }
   </style>
 </head>
@@ -25,6 +32,9 @@
 
   <!-- TAP TO START (Fallback) -->
   <button id="start-btn" onclick="startBGM()">TAP TO ACTIVATE PORTAL</button>
+
+  <!-- STOP EVERYTHING BUTTON -->
+  <button id="stop-btn" onclick="stopEverything()">STOP EVERYTHING</button>
 
   <!-- IDLE: BGM -->
   <div id="idle" class="stage active">
@@ -91,6 +101,37 @@
     function resumeBGM() {
       document.getElementById('idle').classList.add('active');
       if (bgmStarted && ytPlayers.bgm) ytPlayers.bgm.playVideo();
+    }
+
+    // === STOP EVERYTHING FUNCTION ===
+    function stopEverything() {
+      // Stop all videos
+      ['vid1', 'vid2', 'vid3'].forEach(id => {
+        if (ytPlayers[id]) {
+          ytPlayers[id].stopVideo();
+          ytPlayers[id].seekTo(0);
+        }
+      });
+
+      // Hide all video stages
+      ['video1', 'video2', 'video3'].forEach(id => {
+        const stage = document.getElementById(id);
+        if (stage) {
+          stage.classList.remove('active');
+          stage.style.opacity = '0';
+        }
+      });
+
+      // Return to idle + resume BGM
+      document.getElementById('idle').classList.add('active');
+      if (bgmStarted && ytPlayers.bgm) {
+        ytPlayers.bgm.playVideo();
+      }
+
+      // Optional: Flash button
+      const btn = document.getElementById('stop-btn');
+      btn.style.background = '#e74c3c';
+      setTimeout(() => btn.style.background = '#c0392b', 300);
     }
 
     const clueToVideo = { 'num': 'video1', 'colors': 'video2', 'date': 'video3' };
