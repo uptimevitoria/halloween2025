@@ -7,12 +7,12 @@
   <style>
     body { font-family: 'Courier New', monospace; background: #000; color: #0f0; margin: 0; overflow: hidden; position: relative; }
     #bgm-controls { position: absolute; top: 20px; left: 20px; z-index: 100; }
-    #bgm-controls button { padding: 10px 15px; font-size: 1rem; margin-right: 10px; }
-    #play-video { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 99; display: none; }
+    #bgm-controls button { padding: 10px 15px; font-size: 1rem; margin-right: 10px; background: #0f0; color: #000; border: none; border-radius: 8px; cursor: pointer; }
+    #play-video { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 99; display: none; padding: 20px 40px; font-size: 1.8rem; background: #6a5acd; color: white; border: none; border-radius: 15px; cursor: pointer; }
     #video-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 1s; pointer-events: none; }
     #video-container.active { opacity: 1; pointer-events: auto; }
-    iframe { width: 90%; max-width: 1200px; height: 70%; border: 3px solid #0f0; border-radius: 15px; }
-    #disembed, #reset { position: absolute; top: 20px; right: 20px; font-size: 1rem; padding: 10px 15px; }
+    #video-container iframe { width: 90%; max-width: 1200px; height: 70%; border: 3px solid #0f0; border-radius: 15px; }
+    #disembed, #reset { position: absolute; top: 20px; right: 20px; font-size: 1rem; padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; }
     #disembed { right: 140px; background: #e67e22; color: white; display: none; }
     #reset { background: #c0392b; color: white; }
     #status { position: absolute; bottom: 20px; left: 20px; font-size: 1rem; color: #0f0; }
@@ -31,7 +31,7 @@
 
   <!-- VIDEO CONTAINER (CENTER) -->
   <div id="video-container">
-    <iframe id="youtube-player" src="" frameborder="0" allow="encrypted-media" allowfullscreen></iframe>
+    <iframe id="vimeo-player" src="" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" allowfullscreen></iframe>
   </div>
 
   <!-- DIS-EMBED & RESET -->
@@ -47,7 +47,7 @@
     const status = document.getElementById('status');
     const playBtn = document.getElementById('play-video');
     const videoContainer = document.getElementById('video-container');
-    const iframe = document.getElementById('youtube-player');
+    const iframe = document.getElementById('vimeo-player');
     const bgmFiles = [
       'YES - Dark Ruins - BGM.mp3',
       'YES - Enchanted Shadows - Dark BGM.mp3',
@@ -56,10 +56,17 @@
     let currentBGM = 0;
     let pendingClue = null;
 
+    // VIMEO VIDEO URLs (YOUR UPLOADS)
     const videoUrls = {
-      num: 'https://www.youtube.com/embed/xZ1m7bt4SbA?start=0',
-      colors: 'https://www.youtube.com/embed/YreXIc0Osyo?start=0',
-      date: 'https://www.youtube.com/embed/ObWbiC3-OLk?start=0'
+      num: 'https://player.vimeo.com/video/1131397582?badge=0&autopause=0&player_id=0&app_id=58479',
+      colors: 'https://player.vimeo.com/video/1131398566?badge=0&autopause=0&player_id=0&app_id=58479',
+      date: 'https://player.vimeo.com/video/1131395575?badge=0&autopause=0&player_id=0&app_id=58479'
+    };
+
+    const clueTitles = {
+      num: 'MAGIC NUMBER',
+      colors: 'MAGIC COLORS',
+      date: 'MAGIC DATE'
     };
 
     function startBGM() {
@@ -77,9 +84,9 @@
       const clue = localStorage.getItem('portal-clue');
       if (clue && clue !== pendingClue) {
         pendingClue = clue;
-        status.textContent = `CLUE RECEIVED: ${clue.toUpperCase()}`;
+        status.textContent = `CLUE RECEIVED: ${clueTitles[clue]}`;
         playBtn.style.display = 'block';
-        playBtn.textContent = `PLAY VIDEO: ${clue.toUpperCase()}`;
+        playBtn.textContent = `PLAY: ${clueTitles[clue]}`;
       }
     }
 
@@ -90,7 +97,7 @@
       videoContainer.classList.add('active');
       document.getElementById('disembed').style.display = 'block';
       playBtn.style.display = 'none';
-      status.textContent = 'Video playing...';
+      status.textContent = `${clueTitles[pendingClue]} playing...`;
     }
 
     function disembedVideo() {
