@@ -102,14 +102,13 @@
       }
 
       if (correct) {
-        // FORCE SYNC
         localStorage.setItem('portal-clue', clueKey);
-        localStorage.setItem('portal-timestamp', Date.now());
-        status.innerHTML = `CLUE SENT: ${clueKey.toUpperCase()}<br>Check DEX.html`;
+        localStorage.setItem('portal-timestamp', Date.now().toString());
+        status.innerHTML = `CLUE SENT: ${clueKey.toUpperCase()}<br>Go to DEX.html and click PLAY VIDEO`;
       } else {
         status.textContent = 'Invalid clue.';
       }
-      setTimeout(() => status.textContent = '', 4000);
+      setTimeout(() => status.textContent = '', 5000);
     }
 
     window.onload = () => { renderColorGrid(); selectedColors = []; document.getElementById('colors').value = ''; };
