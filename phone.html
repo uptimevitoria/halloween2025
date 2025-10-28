@@ -22,6 +22,7 @@
     .color-btn:active { transform: scale(0.95); }
   </style>
 
+  <!-- FIREBASE COMPAT (NO MODULES, NO ERRORS) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
@@ -59,10 +60,14 @@
   <div id="status"></div>
 
   <script>
+    // YOUR CONFIG + databaseURL
     const firebaseConfig = {
       apiKey: "AIzaSyCYBN6ffuq_9KhhDep5ZbEAvzV2uPhxpkQ",
       authDomain: "halloween2025-sync.firebaseapp.com",
       projectId: "halloween2025-sync",
+      storageBucket: "halloween2025-sync.firebasestorage.app",
+      messagingSenderId: "93312253295",
+      appId: "1:93312253295:web:389a98efa6c30c0e227c9a",
       databaseURL: "https://halloween2025-sync-default-rtdb.firebaseio.com"
     };
 
@@ -117,6 +122,8 @@
           time: Date.now()
         }).then(() => {
           status.innerHTML = `CLUE SENT: ${clueKey.toUpperCase()}<br>Go to DEX → PLAY`;
+        }).catch(() => {
+          status.textContent = 'Failed to send. Check internet.';
         });
       } else {
         status.textContent = 'Invalid clue.';
