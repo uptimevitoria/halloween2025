@@ -5,118 +5,122 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Portal Timeline</title>
   <style>
-    body { font-family: 'Courier New', monospace; background: #000; color: #0f0; margin: 0; overflow: hidden; text-align: center; }
-    .screen { position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: opacity 1s; pointer-events: none; }
-    .screen.active { opacity: 1; pointer-events: auto; }
+    body { font-family: 'Courier New', monospace; background: #000; color: #0f0; margin: 0; overflow: hidden; position: relative; }
+    #bgm-controls { position: absolute; top: 20px; left: 20px; z-index: 100; }
+    #bgm-controls button { padding: 10px 15px; font-size: 1rem; margin-right: 10px; }
+    #play-video { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 99; display: none; }
+    #video-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 1s; pointer-events: none; }
+    #video-container.active { opacity: 1; pointer-events: auto; }
     iframe { width: 90%; max-width: 1200px; height: 70%; border: 3px solid #0f0; border-radius: 15px; }
-    button { margin: 10px; padding: 15px 30px; font-size: 1.5rem; background: #0f0; color: #000; border: none; border-radius: 15px; cursor: pointer; }
-    button:hover { background: #0f8; }
-    #reset, #disembed, #reload { position: absolute; top: 20px; font-size: 1rem; padding: 10px 15px; }
-    #reset { right: 20px; background: #c0392b; color: white; }
+    #disembed, #reset { position: absolute; top: 20px; right: 20px; font-size: 1rem; padding: 10px 15px; }
     #disembed { right: 140px; background: #e67e22; color: white; display: none; }
-    #reload { right: 280px; background: #9b59b6; color: white; }
-    #debug { position: absolute; bottom: 20px; left: 20px; font-size: 0.9rem; color: #0f0; }
-    h1, h2 { text-shadow: 0 0 15px #0f0; margin: 10px; }
+    #reset { background: #c0392b; color: white; }
+    #status { position: absolute; bottom: 20px; left: 20px; font-size: 1rem; color: #0f0; }
   </style>
 </head>
 <body>
 
-  <!-- IDLE SCREEN -->
-  <div id="idle" class="screen active">
-    <h1>SYSTEM LOCKED</h1>
-    <p>Awaiting magic clue...</p>
-    <audio id="bgm" loop></audio>
-    <button onclick="startBGM()">START BGM</button>
-    <button id="reload" onclick="location.reload()">RELOAD FOR CLUE</button>
+  <!-- BGM CONTROLS (TOP LEFT) -->
+  <div id="bgm-controls">
+    <button onclick="startBGM()">PLAY BGM</button>
+    <button onclick="stopBGM()">STOP BGM</button>
   </div>
 
-  <!-- VIDEO SCREENS -->
-  <div id="video1" class="screen"><h2>CLUE 1 UNLOCKED</h2><div id="player1"></div></div>
-  <div id="video2" class="screen"><h2>CLUE 2 UNLOCKED</h2><div id="player2"></div></div>
-  <div id="video3" class="screen"><h2>CLUE 3 UNLOCKED</h2><div id="player3"></div><h1>FINAL FRAGMENT</h1></div>
+  <!-- PLAY VIDEO BUTTON (CENTER) -->
+  <button id="play-video" onclick="embedVideo()">PLAY VIDEO</button>
 
+  <!-- VIDEO CONTAINER (CENTER) -->
+  <div id="video-container">
+    <iframe id="youtube-player" src="" frameborder="0" allow="encrypted-media" allowfullscreen></iframe>
+  </div>
+
+  <!-- DIS-EMBED & RESET -->
+  <button id="disembed" onclick="disembedVideo()">DIS-EMBED</button>
   <button id="reset" onclick="resetAll()">RESET ALL</button>
-  <button id="disembed" onclick="disembedVideo()" style="display:none;">DIS-EMBED</button>
-  <div id="debug">Status: Waiting...</div>
+
+  <div id="status">Status: Idle</div>
+
+  <audio id="bgm" loop></audio>
 
   <script>
     const bgm = document.getElementById('bgm');
-    const debug = document.getElementById('debug');
+    const status = document.getElementById('status');
+    const playBtn = document.getElementById('play-video');
+    const videoContainer = document.getElementById('video-container');
+    const iframe = document.getElementById('youtube-player');
     const bgmFiles = [
       'YES - Dark Ruins - BGM.mp3',
       'YES - Enchanted Shadows - Dark BGM.mp3',
       'YES - Shadow Hallows_ Instrumental Halloween Fantasy.mp3'
     ];
     let currentBGM = 0;
-    let currentVideo = null;
+    let pendingClue = null;
 
-    const videos = {
-      num: { id: 'player1', url: 'https://www.youtube.com/embed/xZ1m7bt4SbA?start=0' },
-      colors: { id: 'player2', url: 'https://www.youtube.com/embed/YreXIc0Osyo?start=0' },
-      date: { id: 'player3', url: 'https://www.youtube.com/embed/ObWbiC3-OLk?start=0' }
+    const videoUrls = {
+      num: 'https://www.youtube.com/embed/xZ1m7bt4SbA?start=0',
+      colors: 'https://www.youtube.com/embed/YreXIc0Osyo?start=0',
+      date: 'https://www.youtube.com/embed/ObWbiC3-OLk?start=0'
     };
 
     function startBGM() {
       bgm.src = bgmFiles[currentBGM];
       bgm.play().catch(() => {});
-      debug.textContent = 'BGM playing';
+      status.textContent = `BGM ${currentBGM + 1} playing`;
     }
 
-    function showVideo(clue) {
-      debug.textContent = `CLUE RECEIVED: ${clue.toUpperCase()}`;
+    function stopBGM() {
       bgm.pause();
-      const vid = videos[clue];
-      const container = document.getElementById(vid.id);
-      container.innerHTML = `<iframe src="${vid.url}&t=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-      showScreen('video' + (clue === 'num' ? '1' : clue === 'colors' ? '2' : '3'));
+      status.textContent = 'BGM stopped';
+    }
+
+    function checkForClue() {
+      const clue = localStorage.getItem('portal-clue');
+      if (clue && clue !== pendingClue) {
+        pendingClue = clue;
+        status.textContent = `CLUE RECEIVED: ${clue.toUpperCase()}`;
+        playBtn.style.display = 'block';
+        playBtn.textContent = `PLAY VIDEO: ${clue.toUpperCase()}`;
+      }
+    }
+
+    function embedVideo() {
+      if (!pendingClue) return;
+      stopBGM();
+      iframe.src = videoUrls[pendingClue];
+      videoContainer.classList.add('active');
       document.getElementById('disembed').style.display = 'block';
-      currentVideo = clue;
+      playBtn.style.display = 'none';
+      status.textContent = 'Video playing...';
     }
 
     function disembedVideo() {
-      if (!currentVideo) return;
-      const vid = videos[currentVideo];
-      document.getElementById(vid.id).innerHTML = '';
+      iframe.src = '';
+      videoContainer.classList.remove('active');
       document.getElementById('disembed').style.display = 'none';
       currentBGM = (currentBGM + 1) % bgmFiles.length;
       startBGM();
-      showScreen('idle');
-      currentVideo = null;
-      debug.textContent = 'Video dis-embedded. Ready for next clue.';
+      pendingClue = null;
+      status.textContent = 'Video removed. Ready for next clue.';
     }
 
     function resetAll() {
-      bgm.pause();
-      ['player1','player2','player3'].forEach(id => document.getElementById(id).innerHTML = '');
+      stopBGM();
+      iframe.src = '';
+      videoContainer.classList.remove('active');
       document.getElementById('disembed').style.display = 'none';
+      playBtn.style.display = 'none';
       localStorage.removeItem('portal-clue');
       localStorage.removeItem('portal-timestamp');
-      showScreen('idle');
+      pendingClue = null;
       currentBGM = 0;
-      startBGM();
-      currentVideo = null;
-      debug.textContent = 'Reset complete.';
+      status.textContent = 'Reset complete.';
     }
 
-    function showScreen(id) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-    }
+    // Poll for clue every 1s
+    setInterval(checkForClue, 1000);
+    setTimeout(checkForClue, 500);
 
-    // Listen for clue
-    window.addEventListener('storage', e => {
-      if (e.key === 'portal-clue' && e.newValue) {
-        showVideo(e.newValue);
-      }
-    });
-
-    // Check on load
-    setTimeout(() => {
-      const clue = localStorage.getItem('portal-clue');
-      if (clue) showVideo(clue);
-    }, 500);
-
-    // First click starts BGM
+    // First interaction
     document.body.addEventListener('click', function init() {
       if (!bgm.src) startBGM();
       document.body.removeEventListener('click', init);
