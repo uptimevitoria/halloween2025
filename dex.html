@@ -11,7 +11,8 @@
     iframe { width: 90%; max-width: 1200px; height: 70%; border: 3px solid #0f0; border-radius: 15px; }
     button { margin: 10px; padding: 15px 30px; font-size: 1.5rem; background: #0f0; color: #000; border: none; border-radius: 15px; cursor: pointer; }
     button:hover { background: #0f8; }
-    #reset { position: absolute; top: 20px; right: 20px; background: #c0392b; color: white; font-size: 1rem; padding: 12px 20px; }
+    #reset, #disembed { position: absolute; top: 20px; right: 20px; background: #c0392b; color: white; font-size: 1rem; padding: 12px 20px; }
+    #disembed { right: 150px; }
     h1, h2 { text-shadow: 0 0 15px #0f0; margin: 10px; }
   </style>
 </head>
@@ -25,61 +26,66 @@
     <button onclick="startBGM()">START BGM</button>
   </div>
 
-  <!-- VIDEO SCREENS -->
-  <div id="video1" class="screen">
-    <h2>CLUE 1 UNLOCKED</h2>
-    <iframe id="yt1" src="" allow="autoplay" frameborder="0"></iframe>
-  </div>
-  <div id="video2" class="screen">
-    <h2>CLUE 2 UNLOCKED</h2>
-    <iframe id="yt2" src="" allow="autoplay" frameborder="0"></iframe>
-  </div>
-  <div id="video3" class="screen">
-    <h2>CLUE 3 UNLOCKED</h2>
-    <iframe id="yt3" src="" allow="autoplay" frameborder="0"></iframe>
-    <h1>FINAL FRAGMENT</h1>
-  </div>
+  <!-- VIDEO SCREENS (iframe added dynamically) -->
+  <div id="video1" class="screen"><h2>CLUE 1 UNLOCKED</h2><div id="player1"></div></div>
+  <div id="video2" class="screen"><h2>CLUE 2 UNLOCKED</h2><div id="player2"></div></div>
+  <div id="video3" class="screen"><h2>CLUE 3 UNLOCKED</h2><div id="player3"></div><h1>FINAL FRAGMENT</h1></div>
 
-  <button id="reset" onclick="resetAll()">RESET</button>
+  <button id="reset" onclick="resetAll()">RESET ALL</button>
+  <button id="disembed" onclick="disembedVideo()" style="display:none;">DIS-EMBED</button>
 
   <script>
     const bgm = document.getElementById('bgm');
-    const bgmFiles = ['YES - Dark Ruins - BGM.mp3', 'YES - Enchanted Shadows - Dark BGM.mp3', 'YES - Shadow Hallows_ Instrumental Halloween Fantasy.mp3'];
+    const bgmFiles = [
+      'YES - Dark Ruins - BGM.mp3',
+      'YES - Enchanted Shadows - Dark BGM.mp3',
+      'YES - Shadow Hallows_ Instrumental Halloween Fantasy.mp3'
+    ];
     let currentBGM = 0;
-    let ytPlayers = {};
+    let currentVideo = null;
 
     const videos = {
-      num: { id: 'yt1', url: 'https://www.youtube.com/embed/xZ1m7bt4SbA?enablejsapi=1' },
-      colors: { id: 'yt2', url: 'https://www.youtube.com/embed/YreXIc0Osyo?enablejsapi=1' },
-      date: { id: 'yt3', url: 'https://www.youtube.com/embed/ObWbiC3-OLk?enablejsapi=1' }
+      num: { id: 'player1', url: 'https://www.youtube.com/embed/xZ1m7bt4SbA?start=0' },
+      colors: { id: 'player2', url: 'https://www.youtube.com/embed/YreXIc0Osyo?start=0' },
+      date: { id: 'player3', url: 'https://www.youtube.com/embed/ObWbiC3-OLk?start=0' }
     };
-
-    function onYouTubeIframeAPIReady() {
-      Object.keys(videos).forEach(clue => {
-        const vid = videos[clue];
-        ytPlayers[vid.id] = new YT.Player(vid.id, {
-          events: { 'onStateChange': (e) => { if (e.data === YT.PlayerState.ENDED) videoEnded(clue); } }
-        });
-      });
-    }
 
     function startBGM() {
       bgm.src = bgmFiles[currentBGM];
-      bgm.play();
+      bgm.play().catch(() => {});
     }
 
-    function playVideo(clue) {
+    function showVideo(clue) {
       bgm.pause();
       const vid = videos[clue];
-      const iframe = document.getElementById(vid.id);
-      iframe.src = vid.url + '&start=0'; // FORCE START AT 0
+      const container = document.getElementById(vid.id);
+      container.innerHTML = `<iframe src="${vid.url}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
       showScreen('video' + (clue === 'num' ? '1' : clue === 'colors' ? '2' : '3'));
+      document.getElementById('disembed').style.display = 'block';
+      currentVideo = clue;
     }
 
-    function videoEnded(clue) {
+    function disembedVideo() {
+      if (!currentVideo) return;
+      const vid = videos[currentVideo];
+      document.getElementById(vid.id).innerHTML = '';
+      document.getElementById('disembed').style.display = 'none';
       currentBGM = (currentBGM + 1) % bgmFiles.length;
       startBGM();
       showScreen('idle');
+      currentVideo = null;
+    }
+
+    function resetAll() {
+      bgm.pause();
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      ['player1','player2','player3'].forEach(id => document.getElementById(id).innerHTML = '');
+      document.getElementById('disembed').style.display = 'none';
+      localStorage.removeItem('portal-clue');
+      showScreen('idle');
+      currentBGM = 0;
+      startBGM();
+      currentVideo = null;
     }
 
     function showScreen(id) {
@@ -87,45 +93,23 @@
       document.getElementById(id).classList.add('active');
     }
 
-    function resetAll() {
-      // Stop BGM
-      bgm.pause();
-
-      // Stop + reset all videos
-      Object.values(videos).forEach(vid => {
-        const player = ytPlayers[vid.id];
-        if (player) player.stopVideo();
-        document.getElementById(vid.id).src = ''; // Clear iframe
-      });
-
-      // Clear unlock
-      localStorage.removeItem('portal-clue');
-
-      // Back to idle
-      showScreen('idle');
-      currentBGM = 0;
-      startBGM();
-    }
-
-    // Listen for phone clue
+    // Listen for clue from phone
     window.addEventListener('storage', e => {
       if (e.key === 'portal-clue' && e.newValue) {
-        playVideo(e.newValue);
+        showVideo(e.newValue);
       }
     });
 
     setTimeout(() => {
       const clue = localStorage.getItem('portal-clue');
-      if (clue) playVideo(clue);
+      if (clue) showVideo(clue);
     }, 500);
 
-    // Auto-start BGM on first click
-    document.body.onclick = () => { if (!bgm.src) startBGM(); document.body.onclick = null; };
-
-    // Load YouTube API
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, null);
+    // Auto-start BGM on first interaction
+    document.body.addEventListener('click', function init() {
+      if (!bgm.src) startBGM();
+      document.body.removeEventListener('click', init);
+    });
   </script>
 </body>
 </html>
